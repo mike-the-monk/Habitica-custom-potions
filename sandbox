@@ -1,0 +1,33 @@
+/* ========================================== */
+/* [Users] Required script data to fill in    */
+/* ========================================== */
+const USER_ID = "PasteYourUserIdHere";
+const API_TOKEN = "PasteYourApiTokenHere"; // Do not share this to anyone
+const WEB_APP_URL = "PasteGeneratedWebAppUrlHere";
+
+/* ========================================== */
+/* [Users] Required customizations to fill in */
+/* ========================================== */
+
+/* ========================================== */
+/* [Users] Optional customizations to fill in */
+/* ========================================== */
+
+/* ========================================== */
+/* [Users] Do not edit code below this line   */
+/* ========================================== */
+const AUTHOR_ID = "0034eb14-b4d8-494e-8386-d3f33cff7922";
+const SCRIPT_NAME = "Custom Potions";
+const HEADERS = {
+  "x-client" : AUTHOR_ID + "-" + SCRIPT_NAME,
+  "x-api-user" : USER_ID,
+  "x-api-key" : API_TOKEN,
+}
+/* STILL TO DO */
+/* ADD RATE LIMITERS TO HEADER */
+/* ANYTHING BELOW THIS LINE IS PSUEDOCODE, NOT ACTUAL CODE. I'M TRYING TO GET A FEEL FOR HOW I'D DO THIS */
+one-time, create custom reward(s) for the custom potion(s). 25 GP, use images I made (where to host them?). "Gain 150 Experience (Instant Use)" and "Recover 30 Mana (Instant Us"e)
+since the custom reward costs 25 GP, it'll automatically fail (not be able to be bought) with insufficient gold. No need for me to code it in
+click reward = trigger script to adjust stats (MP or XP)
+for MP, use if statements if they are close to max mana (fill up to max if +30MP would make them exceed max). If already maxed, display a notification and refund the 25 GP
+How do I lock for level? MP shouldn't work if they're less than level 11, and maybe XP should unlock until level 16
