@@ -1,3 +1,6 @@
+// This code is licensed under the same terms as Habitica:
+    // https://raw.githubusercontent.com/HabitRPG/habitrpg/develop/LICENSE
+
 /* ========================================== */
 /* [Users] Required script data to fill in    */
 /* ========================================== */
@@ -23,14 +26,41 @@ const HEADERS = {
   "x-api-user" : USER_ID,
   "x-api-key" : API_TOKEN,
 }
+
+https://habitica.com/api/v3/tasks/user
+  {
+    "text": "Mana Potion",
+    "type": "reward",
+    "notes": "Recover 30 Mana (Instant Use)",
+    "value": "25"
+  }
+
+
+
 /* STILL TO DO */
-/* ADD RATE LIMITERS TO HEADER */
+
+// test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title (might eliminate ##)
+
 /* ANYTHING BELOW THIS LINE IS PSUEDOCODE, NOT ACTUAL CODE. I'M TRYING TO GET A FEEL FOR HOW I'D DO THIS */
-one-time, create custom reward(s) for the custom potion(s).
-  25 GP, use images I made (where to host them?).
-  "Gain 150 Experience (Instant Use)" and "Recover 30 Mana (Instant Use)"
+
+// still to do: put in FuctionName and enclose in brackets. Maybe do multiple functions for ManaSetup, ExperienceSetup (in case they only want to do one of them)
+
+  https://habitica.com/api/v3/tasks/user
+  {
+    "text": "## **Mana Potion** ![Blue potion](URL of image)",
+    "type": "reward",
+    "notes": "Recover 30 Mana (Instant Use)",
+    "value": "25"
+  }
   
-since the custom reward costs 25 GP, it'll automatically fail (not be able to be bought) with insufficient gold. No need for me to code it in
+   https://habitica.com/api/v3/tasks/user
+  {
+    "text": "## **Experience Potion** ![Yellow potion](URL of image)",
+    "type": "reward",
+    "notes": "Gain 150 Experience (Instant Use)",
+    "value": "25"
+  } 
+  
 
 click reward = trigger script to adjust stats (MP or XP)
 
