@@ -29,7 +29,7 @@ const HEADERS = {
 
 /* STILL TO DO */
 
-// test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title (might eliminate ##)
+// test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title
 
 /* ANYTHING BELOW THIS LINE IS PSUEDOCODE, NOT ACTUAL CODE. I'M TRYING TO GET A FEEL FOR HOW I'D DO THIS */
 
@@ -59,3 +59,5 @@ for MP, use If statements if they are close to max mana
   if already maxed, display a notification "You already have maximum Mana" and refund the 25 GP (or make it fail in the first place, if it's possible)
   
 How do I lock for level? MP potion shouldn't work if they're less than level 11, and maybe XP should unlock at level 16
+
+Limit 4 per day (Mana) and 8 per day (XP)
