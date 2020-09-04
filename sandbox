@@ -27,16 +27,6 @@ const HEADERS = {
   "x-api-key" : API_TOKEN,
 }
 
-https://habitica.com/api/v3/tasks/user
-  {
-    "text": "Mana Potion",
-    "type": "reward",
-    "notes": "Recover 30 Mana (Instant Use)",
-    "value": "25"
-  }
-
-
-
 /* STILL TO DO */
 
 // test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title (might eliminate ##)
@@ -47,7 +37,7 @@ https://habitica.com/api/v3/tasks/user
 
   https://habitica.com/api/v3/tasks/user
   {
-    "text": "## **Mana Potion** ![Blue potion](URL of image)",
+    "text": "**Mana Potion** ![Blue potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/mana%20potion%20transparent%20wide%20432.png)",
     "type": "reward",
     "notes": "Recover 30 Mana (Instant Use)",
     "value": "25"
@@ -55,7 +45,7 @@ https://habitica.com/api/v3/tasks/user
   
    https://habitica.com/api/v3/tasks/user
   {
-    "text": "## **Experience Potion** ![Yellow potion](URL of image)",
+    "text": "**Experience Potion** ![Yellow potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/experience%20potion%20transparent%20wide%20432.png)",
     "type": "reward",
     "notes": "Gain 150 Experience (Instant Use)",
     "value": "25"
