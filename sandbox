@@ -27,14 +27,19 @@ const HEADERS = {
   "x-api-key" : API_TOKEN,
 }
 
-/* STILL TO DO */
+//One-time, set up Experience Potion. It's separate in case someone only wants one potion.
+function doExperienceSetup() {
+   https://habitica.com/api/v3/tasks/user
+  {
+    "text": "**Experience Potion** ![Yellow potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/experience%20potion%20transparent%20wide%20432.png)",
+    "type": "reward",
+    "notes": "Gain 150 Experience (Instant Use)",
+    "value": "25"
+  }
+}
 
-// test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title
-
-/* ANYTHING BELOW THIS LINE IS PSUEDOCODE, NOT ACTUAL CODE. I'M TRYING TO GET A FEEL FOR HOW I'D DO THIS */
-
-// still to do: put in FuctionName and enclose in brackets. Maybe do multiple functions for ManaSetup, ExperienceSetup (in case they only want to do one of them)
-
+//One-time, set up Mana Potion. It's separate in case someone only wants one potion.
+function doManaSetup() {
   https://habitica.com/api/v3/tasks/user
   {
     "text": "**Mana Potion** ![Blue potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/mana%20potion%20transparent%20wide%20432.png)",
@@ -42,16 +47,41 @@ const HEADERS = {
     "notes": "Recover 30 Mana (Instant Use)",
     "value": "25"
   }
-  
-   https://habitica.com/api/v3/tasks/user
-  {
-    "text": "**Experience Potion** ![Yellow potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/experience%20potion%20transparent%20wide%20432.png)",
-    "type": "reward",
-    "notes": "Gain 150 Experience (Instant Use)",
-    "value": "25"
-  } 
-  
+}
 
+
+
+
+// put at the bottom. I'll likely use api_getUserInfo("stats") a lot
+
+function api_getUserInfo(userFields) {
+  const params = {
+    "method" : "get",
+    "headers" : HEADERS,
+    "muteHttpExceptions" : true,
+  }
+  
+  var url = "https://habitica.com/api/v3/user";
+  if (userFields != "") {
+    url += "?userFields=" + userFields;
+  }
+
+  const response = UrlFetchApp.fetch(url, params);
+  user = JSON.parse(response).data;
+  return response;
+}
+
+
+
+//STILL TO DO
+  test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title
+
+/* ANYTHING BELOW THIS LINE IS PSUEDOCODE, NOT ACTUAL CODE. I'M TRYING TO GET A FEEL FOR HOW I'D DO THIS */
+  https://habitica.com/apidoc/#api-Webhook-AddWebhook
+    triggers something
+    
+    
+  
 click reward = trigger script to adjust stats (MP or XP)
   https://habitica.com/apidoc/#api-Webhook-AddWebhook
   
