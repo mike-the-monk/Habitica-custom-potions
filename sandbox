@@ -53,11 +53,22 @@ const HEADERS = {
   
 
 click reward = trigger script to adjust stats (MP or XP)
+  https://habitica.com/apidoc/#api-Webhook-AddWebhook
 
 for MP, use If statements if they are close to max mana
-  fill up to max if +30MP would make them exceed max)
+  fill up to max if +30MP would make them exceed max. Some kind of check of current MP versus Max.
   if already maxed, display a notification "You already have maximum Mana" and refund the 25 GP (or make it fail in the first place, if it's possible)
   
 How do I lock for level? MP potion shouldn't work if they're less than level 11, and maybe XP should unlock at level 16
 
 Limit 4 per day (Mana) and 8 per day (XP)
+
+some Constants I like from https://raw.githubusercontent.com/elrgarcia/Habitica-Warrior-Subclasses/master/Code.txt
+  max total HP paid fail
+  Max usage failed
+  noHP fail
+  no MP fail
+
+other things I like:
+  around 1/4 of the way down, function API get user info
+  create web poke and get web hook, though I don't fully understand how those work
