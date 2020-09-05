@@ -54,6 +54,10 @@ const HEADERS = {
 
 click reward = trigger script to adjust stats (MP or XP)
   https://habitica.com/apidoc/#api-Webhook-AddWebhook
+  
+  To adjust stats, first I need to use api_getUserInfo("stats"). This is also how I will check compared to Max and check for level
+    Is that a custom one Eugene made?
+    Or maybe I should use this one from the API doc: https://habitica.com/api/v3/members/:memberId
 
 for MP, use If statements if they are close to max mana
   fill up to max if +30MP would make them exceed max. Some kind of check of current MP versus Max.
