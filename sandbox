@@ -15,6 +15,7 @@ const WEB_APP_URL = "PasteGeneratedWebAppUrlHere";
 /* ========================================== */
 /* [Users] Optional customizations to fill in */
 /* ========================================== */
+consts NOTIFICATIONS_ON = 1;
 
 /* ========================================== */
 /* [Users] Do not edit code below this line   */
@@ -54,6 +55,7 @@ function doManaSetup() {
 
 // put at the bottom. I'll likely use api_getUserInfo("stats") a lot
 
+//Gets user info so I can use it, especially stats like mana, experience, and level
 function api_getUserInfo(userFields) {
   const params = {
     "method" : "get",
@@ -71,29 +73,87 @@ function api_getUserInfo(userFields) {
   return response;
 }
 
+// Changing stats
+function api_changeStats(hp, mp, exp, gp) {
+  const payload = {
+    "stats.hp" : hp,
+    "stats.mp" : mp,
+    "stats.exp" : exp,
+    "stats.gp" : gp,
+  }
+  
+  const params = {
+    "method" : "put",
+    "headers" : HEADERS,
+    "contentType" : "application/json",
+    "payload" : JSON.stringify(payload),
+    "muteHttpExceptions" : true,
+  }
+  
+  const url = "https://habitica.com/api/v3/user";
+  return UrlFetchApp.fetch(url, params);
+}
+
+// GET SOMETHING THAT SENDS A PM AS A NOTIFICATION, AND CHECKS THE OPTIONAL CUSTOMIZATION IF DISABLED
+
+
 
 
 //STILL TO DO
   test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title
 
 /* ANYTHING BELOW THIS LINE IS PSUEDOCODE, NOT ACTUAL CODE. I'M TRYING TO GET A FEEL FOR HOW I'D DO THIS */
-  https://habitica.com/apidoc/#api-Webhook-AddWebhook
-    triggers something
-    
-    
-  
-click reward = trigger script to adjust stats (MP or XP)
+click reward = score task = trigger script to adjust stats (MP or XP)
   https://habitica.com/apidoc/#api-Webhook-AddWebhook
   
-  To adjust stats, first I need to use api_getUserInfo("stats"). This is also how I will check compared to Max and check for level
-    Is that a custom one Eugene made?
-    Or maybe I should use this one from the API doc: https://habitica.com/api/v3/members/:memberId
+// Experience Potion use
+function runXp() {
+  const response = api_getUserInfo("stats");
+  var lvl = user.stats.lvl;
+  var hp = user.stats.hp;
+  var mp = user.stats.mp;
+  var exp = user.stats.exp;
+  var gp = user.stats.gp;
+  
+  // Check for level lock
+  switch (LevelLockXp){
+    // If it fails, send failure message and refund the money
+    case lvl < 16:
+      // SEND FAILURE MESSAGE
+      // REFUND 25 GP
+      break;
+    // If it passes, run the potion like normal
+    case lvl <= 16:
+      api_changeStats(hp, mp, exp + 150, gp);
+      break;
+  }
+}
 
-for MP, use If statements if they are close to max mana
-  fill up to max if +30MP would make them exceed max. Some kind of check of current MP versus Max.
-  if already maxed, display a notification "You already have maximum Mana" and refund the 25 GP (or make it fail in the first place, if it's possible)
+// Mana Potion use
+// BASICALLY THE SAME AS ABOVE (WAIT UNTIL IT'S DONE BEFORE I TRY MORE BELOW) but also the following additions:
+  var int = user.stats.int;
+  var maxMp = //formula based on int;
+  var mpDiff = maxMp - mp;
   
-How do I lock for level? MP potion shouldn't work if they're less than level 11, and maybe XP should unlock at level 16
+  //and more additions (nested case)
+    // if level lock passes, cehck to see if near maximum Mana
+      switch (nearMaxMp){
+        // Adding +30 Mana won't put them at or beyond maximum
+        case mpDiff <= 30:
+          //run potion like normal
+          break;
+        // Already at maximum Mana, so cause potion to fail
+        case mpDiff = 0:
+          //send failure message (at max MP already)
+          //refund 25 gp
+          break;
+        // Close to maximum Mana, so refill to max but not beyond
+        case mpDiff > 30:
+          //send message that it fill MP up to max but not beyond
+          //run potion almost like normal except instead of mp = mp+30, do mp = mp+mpDiff
+          break;
+      }
+
 
 Limit 4 per day (Mana) and 8 per day (XP)
 
@@ -105,4 +165,4 @@ some Constants I like from https://raw.githubusercontent.com/elrgarcia/Habitica-
 
 other things I like:
   around 1/4 of the way down, function API get user info
-  create web poke and get web hook, though I don't fully understand how those work
+  create webhook and get webhook, though I don't fully understand how those work
