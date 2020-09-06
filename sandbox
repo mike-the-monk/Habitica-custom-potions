@@ -137,10 +137,16 @@ function runXp() {
   
   // Check for level lock
   switch (LevelLockXp){
-    // If it fails, send failure message and refund the money
+    // If it fails, send failure message if notifications are on, and refund the money
     case lvl < 16:
-      api_changeStats(hp, mp, exp, gp + 25);
-      api_sendPrivateMessage("Must be at least level 16 to use this potion.", USER_ID);
+      api_changeStats(hp, mp, exp, gp + 25); // Refund the money
+      switch (notificationsOn){ // Check if notifications are on, send message if yes
+        case NOTIFICATIONS_ON = 1:
+          api_sendPrivateMessage("Must be at least level 16 to use this potion.", USER_ID);
+          break;
+        case NOTIFICATIONS_ON = 0:
+          break;
+      }
       break;
     // If it passes, run the potion like normal
     case lvl >= 16:
