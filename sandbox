@@ -15,7 +15,9 @@ const WEB_APP_URL = "PasteGeneratedWebAppUrlHere";
 /* ========================================== */
 /* [Users] Optional customizations to fill in */
 /* ========================================== */
-consts NOTIFICATIONS_ON = 1;
+
+// Change the 1 to a 0 if you don't want to get private message notifications (such as if you're already at max Mana or exceeded the limit for daily potion usage) 
+consts NOTIFICATIONS_ON = 1; 
 
 /* ========================================== */
 /* [Users] Do not edit code below this line   */
@@ -94,7 +96,25 @@ function api_changeStats(hp, mp, exp, gp) {
   return UrlFetchApp.fetch(url, params);
 }
 
-// GET SOMETHING THAT SENDS A PM AS A NOTIFICATION, AND CHECKS THE OPTIONAL CUSTOMIZATION IF DISABLED
+// Send a private message (as a notification). Make sure to check if notifications are disabled.
+function api_sendPrivateMessage(message, toUserId) {
+  const payload = {
+    "message" : message,
+    "toUserId" : toUserId,
+  }
+  
+  const params = {
+    "method" : "post",
+    "headers" : HEADERS,
+    "contentType" : "application/json",
+    "payload" : JSON.stringify(payload),
+    "muteHttpExceptions" : true,
+  }
+  
+  const url = "https://habitica.com/api/v3/members/send-private-message";
+  return UrlFetchApp.fetch(url, params);
+}
+
 
 
 
@@ -119,11 +139,11 @@ function runXp() {
   switch (LevelLockXp){
     // If it fails, send failure message and refund the money
     case lvl < 16:
-      // SEND FAILURE MESSAGE
-      // REFUND 25 GP
+      api_changeStats(hp, mp, exp, gp + 25);
+      api_sendPrivateMessage("Must be at least level 16 to use this potion.", USER_ID);
       break;
     // If it passes, run the potion like normal
-    case lvl <= 16:
+    case lvl >= 16:
       api_changeStats(hp, mp, exp + 150, gp);
       break;
   }
@@ -132,7 +152,7 @@ function runXp() {
 // Mana Potion use
 // BASICALLY THE SAME AS ABOVE (WAIT UNTIL IT'S DONE BEFORE I TRY MORE BELOW) but also the following additions:
   var int = user.stats.int;
-  var maxMp = //formula based on int;
+  var maxMp = (2 * int) + 30;
   var mpDiff = maxMp - mp;
   
   //and more additions (nested case)
@@ -140,22 +160,28 @@ function runXp() {
       switch (nearMaxMp){
         // Adding +30 Mana won't put them at or beyond maximum
         case mpDiff <= 30:
-          //run potion like normal
+          api_changeStats(hp, mp + 30, exp, gp);
           break;
         // Already at maximum Mana, so cause potion to fail
         case mpDiff = 0:
-          //send failure message (at max MP already)
-          //refund 25 gp
+          api_changeStats(hp, mp, exp, gp + 25);
+          api_sendPrivateMessage("You already have maximum Mana.", USER_ID);
           break;
         // Close to maximum Mana, so refill to max but not beyond
         case mpDiff > 30:
-          //send message that it fill MP up to max but not beyond
-          //run potion almost like normal except instead of mp = mp+30, do mp = mp+mpDiff
+          api_changeStats(hp, mp + mpDiff, exp, gp);
+          api_sendPrivateMessage("This potion filled you to maximum Mana, but not beyond the max.", USER_ID);
           break;
       }
 
-
-Limit 4 per day (Mana) and 8 per day (XP)
+// USAGE LIMITS. FIGURE OUT HOW TO GET COUNTERS TO RESET AT CRON
+  Mana: Limit 4 per day
+  Experience: no more than 1/3 of level's XP can be bought in potions
+  var xpToNextLevel : ( (lvl * lvl) * 0.25) + (10 * lvl)  + 139.75
+    // FIGURE OUT HOW TO ROUND TO NEAREST 10s, ADD TO FORMULA ABOVE
+    var maxXpPotion : ( (xpToNextLevel / 3) / 150)
+      // ROUND DOWN TO NEAREST INTEGER, ADD TO FORMULA ABOVE
+      
 
 some Constants I like from https://raw.githubusercontent.com/elrgarcia/Habitica-Warrior-Subclasses/master/Code.txt
   max total HP paid fail
@@ -164,5 +190,4 @@ some Constants I like from https://raw.githubusercontent.com/elrgarcia/Habitica-
   no MP fail
 
 other things I like:
-  around 1/4 of the way down, function API get user info
   create webhook and get webhook, though I don't fully understand how those work
