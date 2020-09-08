@@ -16,7 +16,8 @@ const WEB_APP_URL = "PasteGeneratedWebAppUrlHere";
 /* [Users] Optional customizations to fill in */
 /* ========================================== */
 
-// Change the 1 to a 0 if you don't want to get private message notifications (such as if you're already at max Mana or exceeded the limit for daily potion usage) 
+// Do you want to get private message notifications? (examples include if you're already at max Mana or exceeded the limit for daily potion usage) 
+// If you don't want them, change the 1 to a 0 in the line below
 consts NOTIFICATIONS_ON = 1; 
 
 /* ========================================== */
