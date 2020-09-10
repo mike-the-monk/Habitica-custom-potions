@@ -31,22 +31,40 @@ const HEADERS = {
   "x-api-key" : API_TOKEN,
 }
 
-//One-time, set up Experience Potion. It's separate in case someone only wants one potion.
+const XP_POTION_LEVEL_LOCK = 21;
+const MSG_XP_POTION_LEVEL_LOCK_FAIL = "You must be at least level 21 to use this potion.";
+const MSG_XP_POTION_DAILY_USAGE_EXCEEDED = "You've already gained your maximum allowable XP from potions today.";
+
+const MP_POTION_LEVEL_LOCK = 16;
+const MSG_MP_POTION_LEVEL_LOCK_FAIL = "You must be at least level 16 to use this potion.";
+const MAX_DAILY_MP_POTION_USAGE = 4;
+const MSG_MP_POTION_DAILY_USAGE_EXCEEDED = "You can only use this potion four times each day.";
+
+var cronCount = 0;
+
+var XpUsageToday = 0;
+var MaxDailyXpUsage = 0;
+
+var MpUsageToday = 0;
+
+
+
+// One-time, set up Experience Potion. It's separate in case someone only wants one potion.
 function doExperienceSetup() {
    https://habitica.com/api/v3/tasks/user
   {
-    "text": "**Experience Potion** ![Yellow potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/experience%20potion%20transparent%20wide%20432.png)",
+    "text": "**Experience Potion** [Yellow potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/experience%20potion%20transparent%20wide%20432.png)",
     "type": "reward",
     "notes": "Gain 150 Experience (Instant Use)",
     "value": "25"
   }
 }
 
-//One-time, set up Mana Potion. It's separate in case someone only wants one potion.
+// One-time, set up Mana Potion. It's separate in case someone only wants one potion.
 function doManaSetup() {
   https://habitica.com/api/v3/tasks/user
   {
-    "text": "**Mana Potion** ![Blue potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/mana%20potion%20transparent%20wide%20432.png)",
+    "text": "**Mana Potion** [Blue potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/mana%20potion%20transparent%20wide%20432.png)",
     "type": "reward",
     "notes": "Recover 30 Mana (Instant Use)",
     "value": "25"
@@ -56,9 +74,9 @@ function doManaSetup() {
 
 
 
-// put at the bottom. I'll likely use api_getUserInfo("stats") a lot
+// put at the bottom
 
-//Gets user info so I can use it, especially stats like mana, experience, and level
+// Gets user info so I can use it, especially stats like mana, experience, and level
 function api_getUserInfo(userFields) {
   const params = {
     "method" : "get",
@@ -76,7 +94,7 @@ function api_getUserInfo(userFields) {
   return response;
 }
 
-// Changing stats
+// Changes stats
 function api_changeStats(hp, mp, exp, gp) {
   const payload = {
     "stats.hp" : hp,
@@ -97,26 +115,34 @@ function api_changeStats(hp, mp, exp, gp) {
   return UrlFetchApp.fetch(url, params);
 }
 
-// Send a private message (as a notification). Make sure to check if notifications are disabled.
+// Send a notification as a private message, only if they're enabled
 function api_sendPrivateMessage(message, toUserId) {
-  const payload = {
-    "message" : message,
-    "toUserId" : toUserId,
+  switch (notificationsOn){ // Check if notifications are on, send message if yes
+        case NOTIFICATIONS_ON = 0:
+          break;        
+        case NOTIFICATIONS_ON = 1:
+            const payload = {
+              "message" : message,
+              "toUserId" : toUserId,
+            }
+            const params = {
+              "method" : "post",
+              "headers" : HEADERS,
+              "contentType" : "application/json",
+              "payload" : JSON.stringify(payload),
+              "muteHttpExceptions" : true,
+            }
+            const url = "https://habitica.com/api/v3/members/send-private-message";
+            return UrlFetchApp.fetch(url, params);
+          break;
   }
-  
-  const params = {
-    "method" : "post",
-    "headers" : HEADERS,
-    "contentType" : "application/json",
-    "payload" : JSON.stringify(payload),
-    "muteHttpExceptions" : true,
-  }
-  
-  const url = "https://habitica.com/api/v3/members/send-private-message";
-  return UrlFetchApp.fetch(url, params);
 }
 
-
+// Resets all counters
+function resetCounters() {
+  XpUsageToday = 0;
+  MpUsageToday = 0;
+}
 
 
 
@@ -129,29 +155,40 @@ click reward = score task = trigger script to adjust stats (MP or XP)
   
 // Experience Potion use
 function runXp() {
-  const response = api_getUserInfo("stats");
+  const response = api_getUserInfo("stats,flags.cronCount");
   var lvl = user.stats.lvl;
   var hp = user.stats.hp;
   var mp = user.stats.mp;
   var exp = user.stats.exp;
   var gp = user.stats.gp;
   
+  // If they've Cronned, reset all counters
+  if (cronCount != user.flags.cronCount) {
+    cronCount = user.flags.cronCount;
+    resetCounters();
+  }
+  
+  // Calculate XP needed to level up, then usage maximum based on that
+  XpToNextLevel = Math.round((Math.pow(user.stats.lvl, 2) * 0.25 + 10 * user.stats.lvl + 139.75) / 10) * 10;
+  MaxDailyXpUsage = Math.floor(XpToNextLevel / 3);
+  
   // Check for level lock
-  switch (LevelLockXp){
+  switch (LevelLockXp) {
     // If it fails, send failure message if notifications are on, and refund the money
-    case lvl < 21:
-      api_changeStats(hp, mp, exp, gp + 25); // Refund the money
-      switch (notificationsOn){ // Check if notifications are on, send message if yes
-        case NOTIFICATIONS_ON = 1:
-          api_sendPrivateMessage("Must be at least level 21 to use this potion.", USER_ID);
-          break;
-        case NOTIFICATIONS_ON = 0:
-          break;
-      }
+    case lvl < XP_POTION_LEVEL_LOCK:
+      api_changeStats(hp, mp, exp, gp + 25); // Refund the money  
+      api_sendPrivateMessage(MSG_XP_POTION_LEVEL_LOCK_FAIL, USER_ID);
       break;
-    // If it passes, then check if run the potion like normal
-    case lvl >= 21:
-      api_changeStats(hp, mp, exp + 150, gp);
+    // If it passes, check if they've exceeded max XP gain today
+    case lvl >= XP_POTION_LEVEL_LOCK:
+      if (XpUsageToday + 150 > MaxDailyXpUsage) { // If maximum usage exceeded
+        api_changeStats(hp, mp, exp, gp + 25); // Refund the money 
+        api_sendPrivateMessage(MSG_XP_POTION_DAILY_USAGE_EXCEEDED, USER_ID); // Send failure message
+      }
+      else { // If it passes, run potion like normal and increment counter by 150
+        api_changeStats(hp, mp, exp + 150, gp);
+        XpUsageToday += 150;
+      }
       break;
   }
 }
@@ -181,31 +218,7 @@ function runXp() {
           break;
       }
 
-// USAGE LIMITS. FIGURE OUT HOW TO GET COUNTERS TO RESET AT CRON
-  Mana: Limit 4 per day
-  Experience: no more than 1/3 of level's XP can be bought in potions
-  var xpToNextLevel : ( (lvl * lvl) * 0.25) + (10 * lvl)  + 139.75
-    // FIGURE OUT HOW TO ROUND TO NEAREST 10s, ADD TO FORMULA ABOVE
-    var maxXpPotion : ( (xpToNextLevel / 3) / 150)
-      // ROUND DOWN TO NEAREST INTEGER, ADD TO FORMULA ABOVE
-      
-      // stuff from Eugene for resetting counter (look up how he uses "totalUsage" in his code)
-        // If new day, reset total HP paid counter
-          if (cronCount != user.flags.cronCount) {
-            cronCount = user.flags.cronCount;
-            totalUsage = 0;
-          }
-        // How to calculate XP needed to next level, but I'll have to adapt this from him
-          exp += Math.round((Math.pow(user.stats.lvl, 2) * 0.25 + 10 * user.stats.lvl + 139.75) / 10) * 10;
-        // how to round down
-          Math.floor(Java stuff)
-      
 
-some Constants I like from https://raw.githubusercontent.com/elrgarcia/Habitica-Warrior-Subclasses/master/Code.txt
-  max total HP paid fail
-  Max usage failed
-  noHP fail
-  no MP fail
 
-other things I like:
+things I like:
   create webhook and get webhook, though I don't fully understand how those work
