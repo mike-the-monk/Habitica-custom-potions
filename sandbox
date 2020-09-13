@@ -62,6 +62,7 @@ function doExperienceSetup() {
   {
     "text": "**Experience Potion** [Yellow potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/experience%20potion%20transparent%20wide%20432.png)",
     "type": "reward",
+    "alias": "XPpotion",
     "notes": "Gain 150 Experience (Instant Use)",
     "value": "25"
   }
@@ -84,6 +85,7 @@ function doManaSetup() {
   {
     "text": "**Mana Potion** [Blue potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/mana%20potion%20transparent%20wide%20432.png)",
     "type": "reward",
+    "alias": "MPpotion",
     "notes": "Recover 30 Mana (Instant Use)",
     "value": "25"
   }
