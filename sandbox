@@ -222,3 +222,54 @@ function runXp() {
 
 things I like:
   create webhook and get webhook, though I don't fully understand how those work
+  
+  TO DO [] go through his function DoOneTimeSetup and make sure I understand it all
+  TO DO [] go through all functions regarding webhooks (creation, usage, etc.) to make sure I understand it all
+  
+  
+  Here's Eugene's code about webhooks, from within a function called DoOneTimeSetup
+  
+      const options = {
+      "scored" : true,
+    }
+
+    const payload = {
+      "url" : WEB_APP_URL,
+      "label" : SCRIPT_NAME + " Webhook",
+      "type" : "taskActivity",
+      "options" : options,
+    }
+    
+    apiMult_createNewWebhookNoDuplicates(payload);
+    // normally there's a close bracket here because it's the end of the function, but I didn't copy it
+    
+    Then, outside of that function, here are functions it calls (near the bottom, like all functions that are called)
+    
+    function apiMult_createNewWebhookNoDuplicates(payload) {
+    const response = api_getWebhooks();
+    const webhooks = JSON.parse(response).data;
+    var duplicateExists = 0;
+
+    for (var i in webhooks) {
+      if (webhooks[i].label == payload.label) {
+        duplicateExists = 1;
+      }
+    }
+    // If webhook to be created doesn't exist yet
+    if (!duplicateExists) {
+      api_createNewWebhook(payload);
+    }
+  }
+  
+  function api_createNewWebhook(payload) {
+    const params = {
+      "method" : "post",
+      "headers" : HEADERS,
+      "contentType" : "application/json",
+      "payload" : JSON.stringify(payload),
+      "muteHttpExceptions" : true,
+    }
+
+  const url = "https://habitica.com/api/v3/user/webhook";
+  return UrlFetchApp.fetch(url, params);
+}
