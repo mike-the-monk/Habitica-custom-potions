@@ -92,46 +92,6 @@ function doManaSetup() {
   // Put the webhook setup here also
 }
 
-// Experience Potion use
-function runXp() {
-  const response = api_getUserInfo("stats,flags.cronCount");
-  var lvl = user.stats.lvl;
-  var hp = user.stats.hp;
-  var mp = user.stats.mp;
-  var exp = user.stats.exp;
-  var gp = user.stats.gp;
-  
-  // If they've Cronned, reset all counters
-  if (cronCount != user.flags.cronCount) {
-    cronCount = user.flags.cronCount;
-    resetCounters();
-  }
-  
-  // Calculate XP needed to level up, then usage maximum based on that
-  XpToNextLevel = Math.round((Math.pow(user.stats.lvl, 2) * 0.25 + 10 * user.stats.lvl + 139.75) / 10) * 10;
-  MaxDailyXpUsage = Math.floor(XpToNextLevel / 3);
-  
-  // Check for level lock
-  switch (LevelLockXp) {
-    // If it fails, send failure message if notifications are on, and refund the money
-    case lvl < XP_POTION_LEVEL_LOCK:
-      api_changeStats(hp, mp, exp, gp + 25); // Refund the money  
-      api_sendPrivateMessage(MSG_XP_POTION_LEVEL_LOCK_FAIL, USER_ID);
-      break;
-    // If it passes, check if they've exceeded max XP gain today
-    case lvl >= XP_POTION_LEVEL_LOCK:
-      if (XpUsageToday + 150 > MaxDailyXpUsage) { // If maximum usage exceeded
-        api_changeStats(hp, mp, exp, gp + 25); // Refund the money 
-        api_sendPrivateMessage(MSG_XP_POTION_DAILY_USAGE_EXCEEDED, USER_ID); // Send failure message
-      }
-      else { // If it passes, run potion like normal and increment counter by 150
-        api_changeStats(hp, mp, exp + 150, gp);
-        XpUsageToday += 150;
-      }
-      break;
-  }
-}
-
 // Create a webhook if no duplicate exists
 function apiMult_createNewWebhookNoDuplicates(payload) {
   const response = api_getWebhooks();
@@ -244,8 +204,65 @@ function resetCounters() {
 }
 
 
+// Experience Potion use
+function runXpPotion() {
+  const response = api_getUserInfo("stats,flags.cronCount");
+  var lvl = user.stats.lvl;
+  var hp = user.stats.hp;
+  var mp = user.stats.mp;
+  var exp = user.stats.exp;
+  var gp = user.stats.gp;
+  
+  // If they've Cronned, reset all counters
+  if (cronCount != user.flags.cronCount) {
+    cronCount = user.flags.cronCount;
+    resetCounters();
+  }
+  
+  // Calculate XP needed to level up, then usage maximum based on that
+  XpToNextLevel = Math.round((Math.pow(user.stats.lvl, 2) * 0.25 + 10 * user.stats.lvl + 139.75) / 10) * 10;
+  MaxDailyXpUsage = Math.floor(XpToNextLevel / 3);
+  
+  // Check for level lock
+  switch (LevelLockXp) {
+    // If it fails, send failure message if notifications are on, and refund the money
+    case lvl < XP_POTION_LEVEL_LOCK:
+      api_changeStats(hp, mp, exp, gp + 25); // Refund the money  
+      api_sendPrivateMessage(MSG_XP_POTION_LEVEL_LOCK_FAIL, USER_ID);
+      break;
+    // If it passes, check if they've exceeded max XP gain today
+    case lvl >= XP_POTION_LEVEL_LOCK:
+      if (XpUsageToday + 150 > MaxDailyXpUsage) { // If maximum usage exceeded
+        api_changeStats(hp, mp, exp, gp + 25); // Refund the money 
+        api_sendPrivateMessage(MSG_XP_POTION_DAILY_USAGE_EXCEEDED, USER_ID); // Send failure message
+      }
+      else { // If it passes, run potion like normal and increment counter by 150
+        api_changeStats(hp, mp, exp + 150, gp);
+        XpUsageToday += 150;
+      }
+      break;
+  }
+}
 
 
+
+// do things when the webhook runs
+function doPost(e) {
+  const dataContents = JSON.parse(e.postData.contents);
+  const type = dataContents.type;
+  const task = dataContents.task;
+  
+  // Check if a task was scored and if it was the XPpotion alias, do XP Potion
+  if ((type == "scored") && (task.alias == "XPpotion")) {
+    do runXpPotion();
+  }
+  // Check if a task was scored and if it was the MPpotion alias, do MP Potion
+  else if ((type == "scored") && (task.alias == "MPpotion")) {
+    do runMpPotion();
+  }
+  
+  return HtmlService.createHtmlOutput();
+}
 
  
 
