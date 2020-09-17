@@ -2,10 +2,9 @@
     // https://raw.githubusercontent.com/HabitRPG/habitrpg/develop/LICENSE
     
     //STILL TO DO
-    [] how do I get the webhook to trigger runXp below?
-    [] test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title
-    [] test level lock, XP per day limit, notifications
-    [] test setup (will it make a duplicate webhook?)
+      // test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title
+      // test level lock, XP per day limit, notifications
+      // test setup (will it make a duplicate webhook?)
 
 /* ========================================== */
 /* [Users] Required script data to fill in    */
@@ -37,10 +36,14 @@ const HEADERS = {
   "x-api-key" : API_TOKEN,
 }
 
+const XP_POTION_TEXT = "**Experience Potion** [Yellow potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/experience%20potion%20transparent%20wide%20432.png)";
+const XP_POTION_ALIAS = "XPpotion";
 const XP_POTION_LEVEL_LOCK = 21;
 const MSG_XP_POTION_LEVEL_LOCK_FAIL = "You must be at least level 21 to use this potion.";
 const MSG_XP_POTION_DAILY_USAGE_EXCEEDED = "You've already gained your maximum allowable XP from potions today.";
 
+const MP_POTION_TEXT = "**Mana Potion** [Blue potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/mana%20potion%20transparent%20wide%20432.png)";
+const MP_POTION_ALIAS = "MPpotion";
 const MP_POTION_LEVEL_LOCK = 16;
 const MSG_MP_POTION_LEVEL_LOCK_FAIL = "You must be at least level 16 to use this potion.";
 const MAX_DAILY_MP_POTION_USAGE = 4;
@@ -60,9 +63,9 @@ function doExperienceSetup() {
   // First, create the potion as a custom reward
   https://habitica.com/api/v3/tasks/user
   {
-    "text": "**Experience Potion** [Yellow potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/experience%20potion%20transparent%20wide%20432.png)",
+    "text": XP_POTION_TEXT,
     "type": "reward",
-    "alias": "XPpotion",
+    "alias": XP_POTION_ALIAS,
     "notes": "Gain 150 Experience (Instant Use)",
     "value": "25"
   }
@@ -83,9 +86,9 @@ function doExperienceSetup() {
 function doManaSetup() {
   https://habitica.com/api/v3/tasks/user
   {
-    "text": "**Mana Potion** [Blue potion](https://github.com/Mike-Antonacci/Habitica-custom-potions/blob/master/mana%20potion%20transparent%20wide%20432.png)",
+    "text": MP_POTION_TEXT,
     "type": "reward",
-    "alias": "MPpotion",
+    "alias": MP_POTION_ALIAS,
     "notes": "Recover 30 Mana (Instant Use)",
     "value": "25"
   }
@@ -253,11 +256,11 @@ function doPost(e) {
   const task = dataContents.task;
   
   // Check if a task was scored and if it was the XPpotion alias, do XP Potion
-  if ((type == "scored") && (task.alias == "XPpotion")) {
+  if ((type == "scored") && (task.alias == XP_POTION_ALIAS)) {
     do runXpPotion();
   }
   // Check if a task was scored and if it was the MPpotion alias, do MP Potion
-  else if ((type == "scored") && (task.alias == "MPpotion")) {
+  else if ((type == "scored") && (task.alias == MP_POTION_ALIAS)) {
     do runMpPotion();
   }
   
