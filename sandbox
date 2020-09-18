@@ -76,7 +76,7 @@ var MaxDailyXpUsage = 0;
 var MpUsageToday = 0;
 
 // One-time, set up both potions. Single-potion setups are also available.
-fuction doBothPotionSetup() {
+function doBothPotionSetup() {
   api_createNewTaskForUser([MP_POTION_BUTTON, XP_POTION_BUTTON]);
   
   // Next, create the webhook
