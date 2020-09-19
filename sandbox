@@ -113,7 +113,7 @@ function doExperienceSetup() {
 // One-time, set up Mana Potion. It's separate in case someone only wants one potion.
 function doManaSetup() {
   // First, create the potion as a custom reward
-  api_createNewTaskForUser(XP_POTION_BUTTON);
+  api_createNewTaskForUser(MP_POTION_BUTTON);
   
   // Next, create the webhook
   const options = {
