@@ -136,11 +136,11 @@ function doPost(e) {
   
   // Check if a task was scored and if it was the XPpotion alias, do XP Potion
   if ((type == "scored") && (task.alias == XP_POTION_ALIAS)) {
-    do runXpPotion();
+    runXpPotion();
   }
   // Check if a task was scored and if it was the MPpotion alias, do MP Potion
   else if ((type == "scored") && (task.alias == MP_POTION_ALIAS)) {
-    do runMpPotion();
+    runMpPotion();
   }
   
   return HtmlService.createHtmlOutput();
