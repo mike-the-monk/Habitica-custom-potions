@@ -222,14 +222,7 @@ function api_getUserInfo(userFields) {
 }
 
 // Changes stats
-function api_changeStats(hp, mp, exp, gp) {
-  const payload = {
-    "stats.hp" : hp,
-    "stats.mp" : mp,
-    "stats.exp" : exp,
-    "stats.gp" : gp,
-  }
-  
+function api_updateUser(payload) { 
   const params = {
     "method" : "put",
     "headers" : HEADERS,
@@ -295,17 +288,17 @@ function runXpPotion() {
   switch (LevelLockXp) {
     // If it fails, send failure message if notifications are on, and refund the money
     case lvl < XP_POTION_LEVEL_LOCK:
-      api_changeStats(hp, mp, exp, gp + 25); // Refund the money  
+      api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); // Refund the money  
       api_sendPrivateMessage(MSG_XP_POTION_LEVEL_LOCK_FAIL, USER_ID);
       break;
     // If it passes, check if they've exceeded max XP gain today
     case lvl >= XP_POTION_LEVEL_LOCK:
       if (XpUsageToday + 150 > MaxDailyXpUsage) { // If maximum usage exceeded
-        api_changeStats(hp, mp, exp, gp + 25); // Refund the money 
+        api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); // Refund the money 
         api_sendPrivateMessage(MSG_XP_POTION_DAILY_USAGE_EXCEEDED, USER_ID); // Send failure message
       }
       else { // If it passes, run potion like normal and increment counter by 150
-        api_changeStats(hp, mp, exp + 150, gp);
+        api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp + 150, "stats.gp" : gp});
         XpUsageToday += 150;
       }
       break;
@@ -323,16 +316,16 @@ function runXpPotion() {
       switch (nearMaxMp){
         // Adding +30 Mana won't put them at or beyond maximum
         case mpDiff <= 30:
-          api_changeStats(hp, mp + 30, exp, gp);
+          api_updateUser({"stats.hp" : hp, "stats.mp" : mp + 30, "stats.exp" : exp, "stats.gp" : gp});
           break;
         // Already at maximum Mana, so cause potion to fail
         case mpDiff = 0:
-          api_changeStats(hp, mp, exp, gp + 25);
+          api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25});
           api_sendPrivateMessage("You already have maximum Mana.", USER_ID);
           break;
         // Close to maximum Mana, so refill to max but not beyond
         case mpDiff > 30:
-          api_changeStats(hp, mp + mpDiff, exp, gp);
+          api_updateUser({"stats.hp" : hp, "stats.mp" : mp + mpDiff, "stats.exp" : exp, "stats.gp" : gp});
           api_sendPrivateMessage("This potion filled you to maximum Mana, but not beyond the max.", USER_ID);
           break;
       }
