@@ -204,7 +204,7 @@ function api_createNewWebhook(payload) {
 }
 
 // Gets user info so I can use it, especially stats like mana, experience, and level
-function api_getUserInfo(userFields) {
+function api_getAuthenticatedUserProfile(userFields) {
   const params = {
     "method" : "get",
     "headers" : HEADERS,
@@ -216,9 +216,7 @@ function api_getUserInfo(userFields) {
     url += "?userFields=" + userFields;
   }
 
-  const response = UrlFetchApp.fetch(url, params);
-  user = JSON.parse(response).data;
-  return response;
+  return UrlFetchApp.fetch(url, params);
 }
 
 // Changes stats
@@ -267,7 +265,7 @@ function resetCounters() {
 
 // Experience Potion use
 function runXpPotion() {
-  const response = api_getUserInfo("stats,flags.cronCount");
+  const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
   var lvl = user.stats.lvl;
   var hp = user.stats.hp;
   var mp = user.stats.mp;
