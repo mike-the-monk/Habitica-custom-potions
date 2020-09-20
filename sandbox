@@ -1,10 +1,5 @@
 // This code is licensed under the same terms as Habitica:
     // https://raw.githubusercontent.com/HabitRPG/habitrpg/develop/LICENSE
-    
-    //STILL TO DO
-      // test out how the image looks for the custom reward (placing, etc.) and also the size of the potion title
-      // test level lock, XP per day limit, notifications
-      // test setup (will it make a duplicate webhook?)
 
 /* ========================================== */
 /* [Users] Required script data to fill in    */
@@ -16,7 +11,8 @@ const WEB_APP_URL = "PasteGeneratedWebAppUrlHere";
 /* ========================================== */
 /* [Users] Required customizations to fill in */
 /* ========================================== */
-
+const CREATE_EXPERIENCE_POTION = 1; // Change this 1 to a 0 if you don't want the Experience Potion
+const CREATE_MANA_POTION = 1; // Change this 1 to a 0 if you don't want the Mana Potion
 /* ========================================== */
 /* [Users] Optional customizations to fill in */
 /* ========================================== */
@@ -75,45 +71,16 @@ var XpUsageToday = 0;
 var MaxDailyXpUsage = 0;
 var MpUsageToday = 0;
 
-// One-time, set up both potions. Single-potion setups are also available.
-function doBothPotionSetup() {
-  api_createNewTaskForUser([MP_POTION_BUTTON, XP_POTION_BUTTON]);
-  
-  // Next, create the webhook
-  const options = {
-    "scored" : true,
+function doOneTimeSetup() {
+  if ((CREATE_EXPERIENCE_POTION == 1) && (CREATE_MANA_POTION == 1)) {
+    api_createNewTaskForUser([MP_POTION_BUTTON, XP_POTION_BUTTON]);
   }
-  const payload = {
-    "url" : WEB_APP_URL,
-    "label" : SCRIPT_NAME + " Webhook",
-    "type" : "taskActivity",
-    "options" : options,
+  else if ((CREATE_EXPERIENCE_POTION == 1) && (CREATE_MANA_POTION == 0)) {
+    api_createNewTaskForUser([XP_POTION_BUTTON]);
   }
-  apiMult_createNewWebhookNoDuplicates(payload); 
-}
-
-// One-time, set up Experience Potion. It's separate in case someone only wants one potion.
-function doExperienceSetup() {
-  // First, create the potion as a custom reward
-  api_createNewTaskForUser(XP_POTION_BUTTON);
-  
-  // Next, create the webhook
-  const options = {
-    "scored" : true,
+  else if ((CREATE_EXPERIENCE_POTION == 0) && (CREATE_MANA_POTION == 1)) {
+    api_createNewTaskForUser([MP_POTION_BUTTON]);
   }
-  const payload = {
-    "url" : WEB_APP_URL,
-    "label" : SCRIPT_NAME + " Webhook",
-    "type" : "taskActivity",
-    "options" : options,
-  }
-  apiMult_createNewWebhookNoDuplicates(payload); 
-}
-
-// One-time, set up Mana Potion. It's separate in case someone only wants one potion.
-function doManaSetup() {
-  // First, create the potion as a custom reward
-  api_createNewTaskForUser(MP_POTION_BUTTON);
   
   // Next, create the webhook
   const options = {
