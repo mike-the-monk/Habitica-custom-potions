@@ -48,6 +48,8 @@ const MP_POTION_LEVEL_LOCK = 16;
 const MSG_MP_POTION_LEVEL_LOCK_FAIL = "You must be at least level 16 to use this potion.";
 const MAX_DAILY_MP_POTION_USAGE = 4;
 const MSG_MP_POTION_DAILY_USAGE_EXCEEDED = "You can only use this potion four times each day.";
+const MSG_ALREADY_AT_MAX_MANA = "You already have maximum Mana.";
+const MSG_NEAR_MAX_MANA = "This potion filled you to maximum Mana, but not beyond the max.";
 
 const XP_POTION_BUTTON = {
     "text": XP_POTION_TEXT,
@@ -201,15 +203,11 @@ function api_updateUser(payload) {
 }
 
 // Send a notification as a private message, only if they're enabled
-function api_sendPrivateMessage(message, toUserId) {
-  switch (notificationsOn){ // Check if notifications are on, send message if yes
-        case NOTIFICATIONS_ON = 0:
+function api_sendPrivateMessage(payload) {
+  switch (NOTIFICATIONS_ON){ // Check if notifications are on, send message if yes
+        case 0:
           break;        
-        case NOTIFICATIONS_ON = 1:
-            const payload = {
-              "message" : message,
-              "toUserId" : toUserId,
-            }
+        case 1:
             const params = {
               "method" : "post",
               "headers" : HEADERS,
@@ -238,6 +236,7 @@ function runXpPotion() {
   var mp = user.stats.mp;
   var exp = user.stats.exp;
   var gp = user.stats.gp;
+  var lvlDiff = XP_POTION_LEVEL_LOCK - lvl;
   
   // If they've Cronned, reset all counters
   if (cronCount != user.flags.cronCount) {
@@ -250,17 +249,17 @@ function runXpPotion() {
   MaxDailyXpUsage = Math.floor(XpToNextLevel / 3);
   
   // Check for level lock
-  switch (LevelLockXp) {
+  switch (lvlDiff) {
     // If it fails, send failure message if notifications are on, and refund the money
-    case lvl < XP_POTION_LEVEL_LOCK:
+    case > 0:
       api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); // Refund the money  
-      api_sendPrivateMessage(MSG_XP_POTION_LEVEL_LOCK_FAIL, USER_ID);
+      api_sendPrivateMessage({"message" : MSG_XP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
       break;
     // If it passes, check if they've exceeded max XP gain today
-    case lvl >= XP_POTION_LEVEL_LOCK:
+    case <= 0:
       if (XpUsageToday + 150 > MaxDailyXpUsage) { // If maximum usage exceeded
         api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); // Refund the money 
-        api_sendPrivateMessage(MSG_XP_POTION_DAILY_USAGE_EXCEEDED, USER_ID); // Send failure message
+        api_sendPrivateMessage({"message" : MSG_XP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID}); // Send failure message
       }
       else { // If it passes, run potion like normal and increment counter by 150
         api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp + 150, "stats.gp" : gp});
@@ -278,19 +277,19 @@ function runXpPotion() {
   
   //and more additions (nested case)
     // if level lock passes, cehck to see if near maximum Mana
-      switch (nearMaxMp){
+      switch (mpDiff){
         // Adding +30 Mana won't put them at or beyond maximum
-        case mpDiff <= 30:
+        case <= 30:
           api_updateUser({"stats.hp" : hp, "stats.mp" : mp + 30, "stats.exp" : exp, "stats.gp" : gp});
           break;
         // Already at maximum Mana, so cause potion to fail
-        case mpDiff = 0:
+        case 0:
           api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25});
-          api_sendPrivateMessage("You already have maximum Mana.", USER_ID);
+          api_sendPrivateMessage({"message" : MSG_ALREADY_AT_MAX_MANA, "toUserId" : USER_ID});
           break;
         // Close to maximum Mana, so refill to max but not beyond
-        case mpDiff > 30:
+        case > 30:
           api_updateUser({"stats.hp" : hp, "stats.mp" : mp + mpDiff, "stats.exp" : exp, "stats.gp" : gp});
-          api_sendPrivateMessage("This potion filled you to maximum Mana, but not beyond the max.", USER_ID);
+          api_sendPrivateMessage({"message" : MSG_NEAR_MAX_MANA, "toUserId" : USER_ID});
           break;
       }
