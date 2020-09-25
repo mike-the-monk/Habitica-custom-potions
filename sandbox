@@ -103,6 +103,11 @@ function doPost(e) {
   const type = dataContents.type;
   const task = dataContents.task;
   
+  // Sanitize task alias
+  if ((task.alias == undefined) || (task.alias == null)) {
+    task.alias = "";
+  }
+  
   // Check if a task was scored and if it was the XPpotion alias, do XP Potion
   if ((type == "scored") && (task.alias == XP_POTION_ALIAS)) {
     runXpPotion();
