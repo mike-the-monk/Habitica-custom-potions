@@ -32,6 +32,8 @@ const HEADERS = {
   "x-api-key" : API_TOKEN,
 }
 
+const scriptProperties = PropertiesService.getScriptProperties(); // Constants can have properties changed
+
 const XP_POTION_TEXT = "**Experience Potion** ![Yellow potion](https://raw.githubusercontent.com/Mike-Antonacci/Habitica-custom-potions/master/experience%20potion%20large%20transparent%20wide%20432.png)";
 const XP_POTION_ALIAS = "XPpotion";
 const XP_POTION_NOTES = "Gain 150 Experience (Instant Use). Maximum per day: no more than 1/3 of what's needed to level up.";
