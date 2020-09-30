@@ -222,20 +222,17 @@ function doPost(e) {
         if (mpDiff <= 0) {
           api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
           api_sendPrivateMessage({"message" : MSG_ALREADY_AT_MAX_MANA, "toUserId" : USER_ID});
-          api_sendPrivateMessage({"message" : "daily usage is " + mpUsage, "toUserId" : USER_ID});
         }
         // Check if they're close to maximum mana. If yes, refill them to max but not beyond, and send a message
         else if (mpDiff <= 30) {
           api_updateUser({"stats.hp" : hp, "stats.mp" : mp + mpDiff, "stats.exp" : exp, "stats.gp" : gp});
           mpUsage ++;
           api_sendPrivateMessage({"message" : MSG_NEAR_MAX_MANA, "toUserId" : USER_ID});
-          api_sendPrivateMessage({"message" : "daily usage is " + mpUsage, "toUserId" : USER_ID});
         }
         // Run as normal if they're further than 30 MP away from maximum
         else if (mpDiff > 30) {
           api_updateUser({"stats.hp" : hp, "stats.mp" : mp + 30, "stats.exp" : exp, "stats.gp" : gp});
           mpUsage ++;
-          api_sendPrivateMessage({"message" : "daily usage is " + mpUsage, "toUserId" : USER_ID});
         }
       }
     }
