@@ -73,10 +73,12 @@ const MP_POTION_BUTTON = {
 const CRON_COUNT_KEY = "CRON_COUNT_KEY";
 const XP_USAGE_KEY = "XP_USAGE_KEY";
 const MP_USAGE_KEY = "MP_USAGE_KEY";
+const TIMESTAMP_KEY = "TIMESTAMP_KEY";
 
 var cronCountKey = "";
 var xpUsageKey = "";
 var mpUsageKey = "";
+var timestampKey = "";
 
 function doOneTimeSetup() {
   if ((CREATE_EXPERIENCE_POTION == 1) && (CREATE_MANA_POTION == 1)) {
@@ -116,27 +118,32 @@ function doPost(e) {
     task.alias = "";
   }
   
-  // Check if a task was scored and if it was the XPpotion alias, do XP Potion things
-  if ((type == "scored") && (task.alias == XP_POTION_ALIAS)) {   
+  // Check if a task was scored and if it was the either alias 
+  if ((type == "scored") && ( (task.alias == XP_POTION_ALIAS) || (task.alias == MP_POTION_ALIAS) ) ) {   
     const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
     user = JSON.parse(response).data;
     
     var cronCountKey = CRON_COUNT_KEY;
     var xpUsageKey = XP_USAGE_KEY;
     var mpUsageKey = MP_USAGE_KEY;
+    var timestampKey = TIMESTAMP_KEY
     
     var cronCount = Number(scriptProperties.getProperty(cronCountKey));
     var xpUsage = Number(scriptProperties.getProperty(xpUsageKey));
     var mpUsage = Number(scriptProperties.getProperty(mpUsageKey));
+    var timeStart = Number(scriptProperties.getProperty(timestampKey));
+    
+    if ( (timeStart == 0) || (timeStart == "") ) {
+      timeStart = Date.now();
+    }
+    
+    var timeEnd = Date.now();
     
     var hp = user.stats.hp;
     var exp = user.stats.exp;
     var mp = user.stats.mp;
     var gp = user.stats.gp;
     var lvl = user.stats.lvl;
-    
-    var XpToNextLevel = Math.round((Math.pow(user.stats.lvl, 2) * 0.25 + 10 * user.stats.lvl + 139.75) / 10) * 10;
-    var MaxDailyXpUsage = Math.floor(XpToNextLevel / 3);
     
     // If they've Cronned, reset all counters
     if (cronCount != user.flags.cronCount) {
@@ -145,103 +152,92 @@ function doPost(e) {
       mpUsage = 0;
     }
     
-    // If level lock fails, refund the money and send failure message
-    if (lvl < XP_POTION_LEVEL_LOCK) {
-      api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
-      api_sendPrivateMessage({"message" : MSG_XP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
+    // Rate limiting: If it's been less than 30 seconds since they last clicked one of these buttons, do nothing except save counters
+    if ( (timeEnd - timeStart) < 30000 ) {
+      timeStart = timeEnd;
+      
+      // Save values to non-volatile memory
+      scriptProperties.setProperty(cronCountKey, cronCount);
+      scriptProperties.setProperty(xpUsageKey, xpUsage);
+      scriptProperties.setProperty(mpUsageKey, mpUsage);
+      scriptProperties.setProperty(timestampKey, timeStart);
     }
     else {
-      // If another potion (+150 XP) would put them above the max, refund the money and send failure message
-      if (xpUsage + 150 > MaxDailyXpUsage) {
-        api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
-        api_sendPrivateMessage({"message" : MSG_XP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
-      }
-      // If another potion wouldn't make them exceed the max, run as normal and increment counter
-      else {
-        api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp + 150, "stats.gp" : gp});
-        xpUsage += 150;
-      }
-    }
-    
-    // Save values to non-volatile memory
-    scriptProperties.setProperty(cronCountKey, cronCount);
-    scriptProperties.setProperty(xpUsageKey, xpUsage);
-    scriptProperties.setProperty(mpUsageKey, mpUsage);
-  }
-  
-  // Check if a task was scored and if it was the MPpotion alias, do MP Potion things
-  else if ((type == "scored") && (task.alias == MP_POTION_ALIAS)) {
-    // Get user info
-    const responseUser = api_getAuthenticatedUserProfile("stats,items.gear.equipped,flags.cronCount");
-    user = JSON.parse(responseUser).data;
-    
-    // Get equipment stats info
-    const responseContent = apiFree_getAllAvailableContentObjects();
-    content = JSON.parse(responseContent).data;
-    
-    var cronCountKey = CRON_COUNT_KEY;
-    var xpUsageKey = XP_USAGE_KEY;
-    var mpUsageKey = MP_USAGE_KEY;
-    
-    var cronCount = Number(scriptProperties.getProperty(cronCountKey));
-    var xpUsage = Number(scriptProperties.getProperty(xpUsageKey));
-    var mpUsage = Number(scriptProperties.getProperty(mpUsageKey));
-    
-    var hp = user.stats.hp;
-    var exp = user.stats.exp;
-    var mp = user.stats.mp;
-    var gp = user.stats.gp;
-    var lvl = user.stats.lvl;
-    
-    // Compute total Intelligence
-    var int = calcTotalIntelligence();
-    
-    var maxMp = (2 * int) + 30;
-    var mpDiff = maxMp - mp;
-    
-    // If they've Cronned, reset all counters
-    if (cronCount != user.flags.cronCount) {
-      cronCount = user.flags.cronCount;
-      xpUsage = 0;
-      mpUsage = 0;
-    }
-    
-    // If level lock fails, refund the money and send failure message
-    if (lvl < MP_POTION_LEVEL_LOCK) {
-      api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
-      api_sendPrivateMessage({"message" : MSG_MP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
-    }
-    else {
-      // Check if they've exceeded daily usage. If yes, refund the money and send failure message
-      if (mpUsage >= MAX_DAILY_MP_POTION_USAGE) {
-        api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
-        api_sendPrivateMessage({"message" : MSG_MP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
-      }
-      else {
-        // Check if they're already at maximum mana. If yes, refund the money and send failure message
-        if (mpDiff <= 0) {
+      // Check if it was XPpotion alias, then do XP Potion things
+      if (task.alias == XP_POTION_ALIAS) {
+        var XpToNextLevel = Math.round((Math.pow(user.stats.lvl, 2) * 0.25 + 10 * user.stats.lvl + 139.75) / 10) * 10;
+        var MaxDailyXpUsage = Math.floor(XpToNextLevel / 3);
+        
+        // If level lock fails, refund the money and send failure message
+        if (lvl < XP_POTION_LEVEL_LOCK) {
           api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
-          api_sendPrivateMessage({"message" : MSG_ALREADY_AT_MAX_MANA, "toUserId" : USER_ID});
+          api_sendPrivateMessage({"message" : MSG_XP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
         }
-        // Check if they're close to maximum mana. If yes, refill them to max but not beyond, and send a message
-        else if (mpDiff <= 30) {
-          api_updateUser({"stats.hp" : hp, "stats.mp" : mp + mpDiff, "stats.exp" : exp, "stats.gp" : gp});
-          mpUsage ++;
-          api_sendPrivateMessage({"message" : MSG_NEAR_MAX_MANA, "toUserId" : USER_ID});
-        }
-        // Run as normal if they're further than 30 MP away from maximum
-        else if (mpDiff > 30) {
-          api_updateUser({"stats.hp" : hp, "stats.mp" : mp + 30, "stats.exp" : exp, "stats.gp" : gp});
-          mpUsage ++;
+        else {
+          // If another potion (+150 XP) would put them above the max, refund the money and send failure message
+          if (xpUsage + 150 > MaxDailyXpUsage) {
+            api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
+            api_sendPrivateMessage({"message" : MSG_XP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
+          }
+          // If another potion wouldn't make them exceed the max, run as normal and increment counter
+          else {
+            api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp + 150, "stats.gp" : gp});
+            xpUsage += 150;
+          }
         }
       }
-    }
+      
+      // Check if it was MPpotion alias, then do XP Potion things
+      else if (task.alias == MP_POTION_ALIAS) {
+        // Get equipment stats info
+        const responseContent = apiFree_getAllAvailableContentObjects();
+        content = JSON.parse(responseContent).data;
+        
+        // Compute total Intelligence
+        var int = calcTotalIntelligence();
     
-    // Save values to non-volatile memory
-    scriptProperties.setProperty(cronCountKey, cronCount);
-    scriptProperties.setProperty(xpUsageKey, xpUsage);
-    scriptProperties.setProperty(mpUsageKey, mpUsage);
-  }
+        var maxMp = (2 * int) + 30;
+        var mpDiff = maxMp - mp;
+        
+        // If level lock fails, refund the money and send failure message
+        if (lvl < MP_POTION_LEVEL_LOCK) {
+          api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
+          api_sendPrivateMessage({"message" : MSG_MP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
+        }
+        else {
+          // Check if they've exceeded daily usage. If yes, refund the money and send failure message
+          if (mpUsage >= MAX_DAILY_MP_POTION_USAGE) {
+            api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
+            api_sendPrivateMessage({"message" : MSG_MP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
+          }
+          else {
+            // Check if they're already at maximum mana. If yes, refund the money and send failure message
+            if (mpDiff <= 0) {
+              api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25}); 
+              api_sendPrivateMessage({"message" : MSG_ALREADY_AT_MAX_MANA, "toUserId" : USER_ID});
+            }
+            // Check if they're close to maximum mana. If yes, refill them to max but not beyond, and send a message
+            else if (mpDiff <= 30) {
+              api_updateUser({"stats.hp" : hp, "stats.mp" : mp + mpDiff, "stats.exp" : exp, "stats.gp" : gp});
+              mpUsage ++;
+              api_sendPrivateMessage({"message" : MSG_NEAR_MAX_MANA, "toUserId" : USER_ID});
+            }
+            // Run as normal if they're further than 30 MP away from maximum
+            else if (mpDiff > 30) {
+              api_updateUser({"stats.hp" : hp, "stats.mp" : mp + 30, "stats.exp" : exp, "stats.gp" : gp});
+              mpUsage ++;
+            }
+          }
+        }
+      }
+      
+      // Save values to non-volatile memory
+      timeStart = timeEnd;
+      scriptProperties.setProperty(cronCountKey, cronCount);
+      scriptProperties.setProperty(xpUsageKey, xpUsage);
+      scriptProperties.setProperty(mpUsageKey, mpUsage);
+      scriptProperties.setProperty(timestampKey, timeStart);
+    }
   
   return HtmlService.createHtmlOutput();
 }
@@ -308,6 +304,7 @@ function initScriptProperties() {
   scriptProperties.setProperty(CRON_COUNT_KEY, 0);
   scriptProperties.setProperty(XP_USAGE_KEY, 0);
   scriptProperties.setProperty(MP_USAGE_KEY, 0);
+  scriptProperties.setProperty(TIMESTAMP_KEY, 0);
 }
 
 // Gets user info so I can use it, especially stats like mana, experience, and level
