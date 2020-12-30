@@ -127,14 +127,8 @@ function doPost(e) {
     }
     var timeEnd = Date.now();
     
-    // Rate limiting: If it's been less than 30 seconds since they last clicked one of these buttons, do nothing except save counters
-    if ( (timeEnd - timeStart) < 30000 ) {
-      timeStart = timeEnd;
-      
-      // Save values to non-volatile memory
-      scriptProperties.setProperty(timestampKey, timeStart);
-    }
-    else {
+    // Rate limiting: If it's been less than 30 seconds since they last clicked one of these buttons, do nothing
+    if ( (timeEnd - timeStart) >= 30000 ) {
       const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
       user = JSON.parse(response).data;
     
