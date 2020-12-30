@@ -120,49 +120,45 @@ function doPost(e) {
   
   // Check if a task was scored and if it was the either alias 
   if ((type == "scored") && ( (task.alias == XP_POTION_ALIAS) || (task.alias == MP_POTION_ALIAS) ) ) {   
-    const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
-    user = JSON.parse(response).data;
-    
-    var cronCountKey = CRON_COUNT_KEY;
-    var xpUsageKey = XP_USAGE_KEY;
-    var mpUsageKey = MP_USAGE_KEY;
     var timestampKey = TIMESTAMP_KEY;
-    
-    var cronCount = Number(scriptProperties.getProperty(cronCountKey));
-    var xpUsage = Number(scriptProperties.getProperty(xpUsageKey));
-    var mpUsage = Number(scriptProperties.getProperty(mpUsageKey));
     var timeStart = Number(scriptProperties.getProperty(timestampKey));
-    
     if ( (timeStart == 0) || (timeStart == "") ) {
       timeStart = Date.now();
     }
-    
     var timeEnd = Date.now();
-    
-    var hp = user.stats.hp;
-    var exp = user.stats.exp;
-    var mp = user.stats.mp;
-    var gp = user.stats.gp;
-    var lvl = user.stats.lvl;
-    
-    // If they've Cronned, reset all counters
-    if (cronCount != user.flags.cronCount) {
-      cronCount = user.flags.cronCount;
-      xpUsage = 0;
-      mpUsage = 0;
-    }
     
     // Rate limiting: If it's been less than 30 seconds since they last clicked one of these buttons, do nothing except save counters
     if ( (timeEnd - timeStart) < 30000 ) {
       timeStart = timeEnd;
       
       // Save values to non-volatile memory
-      scriptProperties.setProperty(cronCountKey, cronCount);
-      scriptProperties.setProperty(xpUsageKey, xpUsage);
-      scriptProperties.setProperty(mpUsageKey, mpUsage);
       scriptProperties.setProperty(timestampKey, timeStart);
     }
     else {
+      const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
+      user = JSON.parse(response).data;
+    
+      var cronCountKey = CRON_COUNT_KEY;
+      var xpUsageKey = XP_USAGE_KEY;
+      var mpUsageKey = MP_USAGE_KEY;
+    
+      var cronCount = Number(scriptProperties.getProperty(cronCountKey));
+      var xpUsage = Number(scriptProperties.getProperty(xpUsageKey));
+      var mpUsage = Number(scriptProperties.getProperty(mpUsageKey));
+    
+      var hp = user.stats.hp;
+      var exp = user.stats.exp;
+      var mp = user.stats.mp;
+      var gp = user.stats.gp;
+      var lvl = user.stats.lvl;
+    
+      // If they've Cronned, reset all counters
+      if (cronCount != user.flags.cronCount) {
+        cronCount = user.flags.cronCount;
+        xpUsage = 0;
+        mpUsage = 0;
+      }
+
       // Check if it was XPpotion alias, then do XP Potion things
       if (task.alias == XP_POTION_ALIAS) {
         var XpToNextLevel = Math.round((Math.pow(user.stats.lvl, 2) * 0.25 + 10 * user.stats.lvl + 139.75) / 10) * 10;
@@ -186,7 +182,7 @@ function doPost(e) {
           }
         }
       }
-      
+    
       // Check if it was MPpotion alias, then do XP Potion things
       else if (task.alias == MP_POTION_ALIAS) {
         // Get equipment stats info
