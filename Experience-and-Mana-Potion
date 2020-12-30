@@ -234,7 +234,7 @@ function doPost(e) {
       scriptProperties.setProperty(mpUsageKey, mpUsage);
       scriptProperties.setProperty(timestampKey, timeStart);
     }
-  
+  }
   return HtmlService.createHtmlOutput();
 }
 
