@@ -126,7 +126,7 @@ function doPost(e) {
     var cronCountKey = CRON_COUNT_KEY;
     var xpUsageKey = XP_USAGE_KEY;
     var mpUsageKey = MP_USAGE_KEY;
-    var timestampKey = TIMESTAMP_KEY
+    var timestampKey = TIMESTAMP_KEY;
     
     var cronCount = Number(scriptProperties.getProperty(cronCountKey));
     var xpUsage = Number(scriptProperties.getProperty(xpUsageKey));
