@@ -151,54 +151,49 @@ function doPost(e) {
   }
   
   if ( (type == "scored") && ( (task.alias == ANTI_MP_POTION_ALIAS) || (task.alias == ANTI_HP_POTION_ALIAS) || (task.alias == ANTI_XP_POTION_ALIAS) ) ) {
-    // First, run all the things that run regardless of the potion
-    const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
-    user = JSON.parse(response).data;
-    
-    var cronCountKey = CRON_COUNT_KEY;
-    var AntiMpUsageKey = ANTI_MP_USAGE_KEY;
-    var AntiHpUsageKey = ANTI_HP_USAGE_KEY;
-    var AntiXpUsageKey = ANTI_XP_USAGE_KEY;
     var timestampKey = TIMESTAMP_KEY;
-    
-    var cronCount = Number(scriptProperties.getProperty(cronCountKey));
-    var AntiMpUsage = Number(scriptProperties.getProperty(AntiMpUsageKey));
-    var AntiHpUsage = Number(scriptProperties.getProperty(AntiHpUsageKey));
-    var AntiXpUsage = Number(scriptProperties.getProperty(AntiXpUsageKey));
     var timeStart = Number(scriptProperties.getProperty(timestampKey));
-    
     if ( (timeStart == 0) || (timeStart == "") ) {
       timeStart = Date.now();
     }
-    
     var timeEnd = Date.now();
     
-    var hp = user.stats.hp;
-    var exp = user.stats.exp;
-    var mp = user.stats.mp;
-    var gp = user.stats.gp;
-    var lvl = user.stats.lvl;
-    
-    // If they've Cronned, reset all counters
-    if (cronCount != user.flags.cronCount) {
-      cronCount = user.flags.cronCount;
-      AntiMpUsage = 0;
-      AntiHpUsage = 0;
-      AntiXpUsage = 0;
-    }
-    
-    // Rate limiting: If it's been less than 30 seconds since they last clicked one of these buttons, do nothing except save counters
+    // Rate limiting: If it's been less than 30 seconds since they last clicked one of these buttons, do nothing
     if ( (timeEnd - timeStart) < 30000 ) {
       timeStart = timeEnd;
       
       // Save values to non-volatile memory
-      scriptProperties.setProperty(cronCountKey, cronCount);
-      scriptProperties.setProperty(AntiMpUsageKey, AntiMpUsage);
-      scriptProperties.setProperty(AntiHpUsageKey, AntiHpUsage);
-      scriptProperties.setProperty(AntiXpUsageKey, AntiXpUsage);
       scriptProperties.setProperty(timestampKey, timeStart);
     }
-    else {
+    else {    
+      // Run all the things that run regardless of the potion
+      const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
+      user = JSON.parse(response).data;
+    
+      var cronCountKey = CRON_COUNT_KEY;
+      var AntiMpUsageKey = ANTI_MP_USAGE_KEY;
+      var AntiHpUsageKey = ANTI_HP_USAGE_KEY;
+      var AntiXpUsageKey = ANTI_XP_USAGE_KEY;
+    
+      var cronCount = Number(scriptProperties.getProperty(cronCountKey));
+      var AntiMpUsage = Number(scriptProperties.getProperty(AntiMpUsageKey));
+      var AntiHpUsage = Number(scriptProperties.getProperty(AntiHpUsageKey));
+      var AntiXpUsage = Number(scriptProperties.getProperty(AntiXpUsageKey));
+
+      var hp = user.stats.hp;
+      var exp = user.stats.exp;
+      var mp = user.stats.mp;
+      var gp = user.stats.gp;
+      var lvl = user.stats.lvl;
+    
+      // If they've Cronned, reset all counters
+      if (cronCount != user.flags.cronCount) {
+        cronCount = user.flags.cronCount;
+        AntiMpUsage = 0;
+        AntiHpUsage = 0;
+        AntiXpUsage = 0;
+      }
+
       // If it was the Anti MP Potion alias, do Anti MP Potion (Draining Potion) things
       if (task.alias == ANTI_MP_POTION_ALIAS){
         // If level lock fails, send failure message
@@ -267,15 +262,16 @@ function doPost(e) {
           }
         }
       }
-      
     }
   
-  // Save values to non-volatile memory
-  scriptProperties.setProperty(cronCountKey, cronCount);
-  scriptProperties.setProperty(AntiMpUsageKey, AntiMpUsage);
-  scriptProperties.setProperty(AntiHpUsageKey, AntiHpUsage);
-  scriptProperties.setProperty(AntiXpUsageKey, AntiXpUsage);
-  
+    // Save values to non-volatile memory
+    timeStart = timeEnd;
+    scriptProperties.setProperty(cronCountKey, cronCount);
+    scriptProperties.setProperty(AntiMpUsageKey, AntiMpUsage);
+    scriptProperties.setProperty(AntiHpUsageKey, AntiHpUsage);
+    scriptProperties.setProperty(AntiXpUsageKey, AntiXpUsage);
+    scriptProperties.setProperty(timestampKey, timeStart);
+  }
   return HtmlService.createHtmlOutput();
 }
 
