@@ -92,11 +92,13 @@ const CRON_COUNT_KEY = "CRON_COUNT_KEY";
 const ANTI_MP_USAGE_KEY = "ANTI_MP_USAGE_KEY";
 const ANTI_HP_USAGE_KEY = "ANTI_HP_USAGE_KEY";
 const ANTI_XP_USAGE_KEY = "ANTI_XP_USAGE_KEY";
+const TIMESTAMP_KEY = "TIMESTAMP_KEY";
 
 var cronCountKey = "";
 var AntiMpUsageKey = "";
 var AntiHpUsageKey = "";
 var AntiXpUsageKey = "";
+var timestampKey = "";
 
 function doOneTimeSetup() {
   if ((CREATE_DRAINING_POTION == 1) && (CREATE_FATIGUING_POTION == 1) && (CREATE_STUPEFYING_POTION == 1)) {
@@ -148,7 +150,7 @@ function doPost(e) {
     task.alias = "";
   }
   
-  if (type == "scored") {
+  if ( (type == "scored") && ( (task.alias == ANTI_MP_POTION_ALIAS) || (task.alias == ANTI_HP_POTION_ALIAS) || (task.alias == ANTI_XP_POTION_ALIAS) ) ) {
     // First, run all the things that run regardless of the potion
     const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
     user = JSON.parse(response).data;
@@ -157,11 +159,19 @@ function doPost(e) {
     var AntiMpUsageKey = ANTI_MP_USAGE_KEY;
     var AntiHpUsageKey = ANTI_HP_USAGE_KEY;
     var AntiXpUsageKey = ANTI_XP_USAGE_KEY;
+    var timestampKey = TIMESTAMP_KEY;
     
     var cronCount = Number(scriptProperties.getProperty(cronCountKey));
     var AntiMpUsage = Number(scriptProperties.getProperty(AntiMpUsageKey));
     var AntiHpUsage = Number(scriptProperties.getProperty(AntiHpUsageKey));
     var AntiXpUsage = Number(scriptProperties.getProperty(AntiXpUsageKey));
+    var timeStart = Number(scriptProperties.getProperty(timestampKey));
+    
+    if ( (timeStart == 0) || (timeStart == "") ) {
+      timeStart = Date.now();
+    }
+    
+    var timeEnd = Date.now();
     
     var hp = user.stats.hp;
     var exp = user.stats.exp;
@@ -177,75 +187,88 @@ function doPost(e) {
       AntiXpUsage = 0;
     }
     
-    // If it was the Anti MP Potion alias, do Anti MP Potion (Draining Potion) things
-    if (task.alias == ANTI_MP_POTION_ALIAS){
-      // If level lock fails, send failure message
-      if (lvl < ANTI_MP_POTION_LEVEL_LOCK) {
-        api_sendPrivateMessage({"message" : MSG_ANTI_MP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
-      }
-      else {
-        // Check if they've exceeded daily usage. If yes, send failure message.
-        if (AntiMpUsage >= MAX_DAILY_ANTI_MP_POTION_USAGE) {
-          api_sendPrivateMessage({"message" : MSG_ANTI_MP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
+    // Rate limiting: If it's been less than 30 seconds since they last clicked one of these buttons, do nothing except save counters
+    if ( (timeEnd - timeStart) < 30000 ) {
+      timeStart = timeEnd;
+      
+      // Save values to non-volatile memory
+      scriptProperties.setProperty(cronCountKey, cronCount);
+      scriptProperties.setProperty(AntiMpUsageKey, AntiMpUsage);
+      scriptProperties.setProperty(AntiHpUsageKey, AntiHpUsage);
+      scriptProperties.setProperty(AntiXpUsageKey, AntiXpUsage);
+      scriptProperties.setProperty(timestampKey, timeStart);
+    }
+    else {
+      // If it was the Anti MP Potion alias, do Anti MP Potion (Draining Potion) things
+      if (task.alias == ANTI_MP_POTION_ALIAS){
+        // If level lock fails, send failure message
+        if (lvl < ANTI_MP_POTION_LEVEL_LOCK) {
+          api_sendPrivateMessage({"message" : MSG_ANTI_MP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
         }
         else {
-          // Check if they have sufficient Mana. Send failure message if not.
-          if (mp < 30) {
-            api_sendPrivateMessage({"message" : MSG_INSUFFICIENT_MP, "toUserId" : USER_ID});
+          // Check if they've exceeded daily usage. If yes, send failure message.
+          if (AntiMpUsage >= MAX_DAILY_ANTI_MP_POTION_USAGE) {
+            api_sendPrivateMessage({"message" : MSG_ANTI_MP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
+          }
+          else {
+            // Check if they have sufficient Mana. Send failure message if not.
+            if (mp < 30) {
+              api_sendPrivateMessage({"message" : MSG_INSUFFICIENT_MP, "toUserId" : USER_ID});
+            }
+            else {
+              // Run potion as normal since all checks passed.
+              api_updateUser({"stats.hp" : hp, "stats.mp" : mp - 30, "stats.exp" : exp, "stats.gp" : gp + 25});
+              AntiMpUsage ++;
+            }
+          }
+        }
+      }
+      
+      // If it was the Anti HP Potion alias, do Anti HP Potion (Fatiguing Potion) things
+      else if (task.alias == ANTI_HP_POTION_ALIAS) {
+        // Check if they've exceeded daily usage. If yes, send failure message.
+        if (AntiHpUsage >= MAX_DAILY_ANTI_HP_POTION_USAGE) {
+          api_sendPrivateMessage({"message" : MSG_ANTI_HP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
+        }
+        else {
+          // Check if they have sufficient Health. Send failure message if not.
+          if (hp < 15) {
+            api_sendPrivateMessage({"message" : MSG_INSUFFICIENT_HP, "toUserId" : USER_ID});
           }
           else {
             // Run potion as normal since all checks passed.
-            api_updateUser({"stats.hp" : hp, "stats.mp" : mp - 30, "stats.exp" : exp, "stats.gp" : gp + 25});
-            AntiMpUsage ++;
+            api_updateUser({"stats.hp" : hp - 15, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25});
+            AntiHpUsage ++;
           }
         }
       }
-    }
-    
-    // If it was the Anti HP Potion alias, do Anti HP Potion (Fatiguing Potion) things
-    else if (task.alias == ANTI_HP_POTION_ALIAS) {
-      // Check if they've exceeded daily usage. If yes, send failure message.
-      if (AntiHpUsage >= MAX_DAILY_ANTI_HP_POTION_USAGE) {
-        api_sendPrivateMessage({"message" : MSG_ANTI_HP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
-      }
-      else {
-        // Check if they have sufficient Health. Send failure message if not.
-        if (hp < 15) {
-          api_sendPrivateMessage({"message" : MSG_INSUFFICIENT_HP, "toUserId" : USER_ID});
+      
+      // If it was the Anti XP Potion alias, do Anti XP Potion (Stupefying Potion) things
+      else if (task.alias == ANTI_XP_POTION_ALIAS) {
+        // If level lock fails, send failure message
+        if (lvl < ANTI_XP_POTION_LEVEL_LOCK) {
+          api_sendPrivateMessage({"message" : MSG_ANTI_XP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
         }
         else {
-          // Run potion as normal since all checks passed.
-          api_updateUser({"stats.hp" : hp - 15, "stats.mp" : mp, "stats.exp" : exp, "stats.gp" : gp + 25});
-          AntiHpUsage ++;
-        }
-      }
-    }
-    
-    // If it was the Anti XP Potion alias, do Anti XP Potion (Stupefying Potion) things
-    else if (task.alias == ANTI_XP_POTION_ALIAS) {
-      // If level lock fails, send failure message
-      if (lvl < ANTI_XP_POTION_LEVEL_LOCK) {
-        api_sendPrivateMessage({"message" : MSG_ANTI_XP_POTION_LEVEL_LOCK_FAIL, "toUserId" : USER_ID});
-      }
-      else {
-        // Check if they've exceeded daily usage. If yes, send failure message.
-        if (AntiXpUsage >= MAX_DAILY_ANTI_XP_POTION_USAGE) {
-          api_sendPrivateMessage({"message" : MSG_ANTI_XP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
-        }
-        else {
-          // Check if they have sufficient Experience. Send failure message if not.
-          if (exp < 150) {
-            api_sendPrivateMessage({"message" : MSG_INSUFFICIENT_XP, "toUserId" : USER_ID});
+          // Check if they've exceeded daily usage. If yes, send failure message.
+          if (AntiXpUsage >= MAX_DAILY_ANTI_XP_POTION_USAGE) {
+            api_sendPrivateMessage({"message" : MSG_ANTI_XP_POTION_DAILY_USAGE_EXCEEDED, "toUserId" : USER_ID});
           }
           else {
-            // Run potion as normal since all checks passed.
-            api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp - 150, "stats.gp" : gp + 25});
-            AntiXpUsage ++;
+            // Check if they have sufficient Experience. Send failure message if not.
+            if (exp < 150) {
+              api_sendPrivateMessage({"message" : MSG_INSUFFICIENT_XP, "toUserId" : USER_ID});
+            }
+            else {
+              // Run potion as normal since all checks passed.
+              api_updateUser({"stats.hp" : hp, "stats.mp" : mp, "stats.exp" : exp - 150, "stats.gp" : gp + 25});
+              AntiXpUsage ++;
+            }
           }
         }
       }
+      
     }
-  }
   
   // Save values to non-volatile memory
   scriptProperties.setProperty(cronCountKey, cronCount);
@@ -319,6 +342,7 @@ function initScriptProperties() {
   scriptProperties.setProperty(ANTI_MP_USAGE_KEY, 0);
   scriptProperties.setProperty(ANTI_HP_USAGE_KEY, 0);
   scriptProperties.setProperty(ANTI_XP_USAGE_KEY, 0);
+  scriptProperties.setProperty(TIMESTAMP_KEY, 0);
 }
 
 // Gets user info so I can use it, especially stats like mana, experience, and level
