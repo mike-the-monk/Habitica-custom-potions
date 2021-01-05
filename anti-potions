@@ -153,7 +153,7 @@ function doPost(e) {
   if ( (type == "scored") && ( (task.alias == ANTI_MP_POTION_ALIAS) || (task.alias == ANTI_HP_POTION_ALIAS) || (task.alias == ANTI_XP_POTION_ALIAS) ) ) {
     var timestampKey = TIMESTAMP_KEY;
     var timeStart = Number(scriptProperties.getProperty(timestampKey));
-    if ( (timeStart == 0) || (timeStart == "") || (timeStart == undefined) || timeStart == null) ) {
+    if ( (timeStart == 0) || (timeStart == "") || (timeStart == undefined) || (timeStart == null) ) {
       timeStart = Date.now();
     }
     var timeEnd = Date.now();
