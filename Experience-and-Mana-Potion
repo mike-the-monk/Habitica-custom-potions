@@ -122,7 +122,7 @@ function doPost(e) {
   if ((type == "scored") && ( (task.alias == XP_POTION_ALIAS) || (task.alias == MP_POTION_ALIAS) ) ) {   
     var timestampKey = TIMESTAMP_KEY;
     var timeStart = Number(scriptProperties.getProperty(timestampKey));
-    if ( (timeStart == 0) || (timeStart == "") || (timeStart == undefined) || timeStart == null) ) {
+    if ( (timeStart == 0) || (timeStart == "") || (timeStart == undefined) || (timeStart == null) ) {
       timeStart = Date.now();
     }
     var timeEnd = Date.now();
