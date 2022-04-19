@@ -161,7 +161,7 @@ function doPost(e) {
     // Rate limiting: If it's been less than 30 seconds since they last clicked one of these buttons, do nothing
     if ( (timeEnd - timeStart) >= 30000 ) {   
       // Run all the things that run regardless of the potion
-      const response = api_getAuthenticatedUserProfile("stats,flags.cronCount");
+      const response = api_getAuthenticatedUserProfile("stats");
       user = JSON.parse(response).data;
     
       var cronCountKey = CRON_COUNT_KEY;
